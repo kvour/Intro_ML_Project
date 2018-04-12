@@ -30,7 +30,7 @@ class LinearNet(nn.Module):
         x = F.relu(self.fc3(x))
         # x = F.relu(self.fc4(x))
         # x = F.relu(self.fc5(x))
-        return self.fc4(x)  
+        return self.fc4(x)
 
 
 def train(epoch, xts, yts,xtr,ytr,hist):
@@ -62,12 +62,12 @@ def test():
         data, target = data.cuda(), target.cuda()
         data, target = Variable(data, volatile=True), Variable(target).float()
         output = model(data)
-        test_loss += F.l1_loss(output, target).data[0] 
-        
+        test_loss += F.l1_loss(output, target).data[0]
+
     test_loss /= len(test_loader.dataset)
     print('\nTest set: Average loss: {:.4f}'.format(test_loss))
 
-    
+
 
 #Import Dataset
 #N=5000
@@ -83,7 +83,7 @@ def test():
 #ytr = labels[t:]
 
 ##
-tr_data = sio.loadmat('/home/konstantinos/Documents/Intro_ML_Project/DNN/sarcos_inv.mat')
+tr_data = sio.loadmat('../data/sarcos_inv.mat')
 Ntr = tr_data['sarcos_inv'].shape[0]
 xtr = tr_data['sarcos_inv'][:,:21]
 ytr = tr_data['sarcos_inv'][:,21:]
@@ -91,7 +91,7 @@ ytr = tr_data['sarcos_inv'][:,21:]
 xtr = torch.from_numpy(xtr).float()
 ytr = torch.from_numpy(ytr).float()
 
-ts_data = sio.loadmat('/home/konstantinos/Documents/Intro_ML_Project/DNN/sarcos_inv_test.mat')
+ts_data = sio.loadmat('../data/sarcos_inv_test.mat')
 Nts = ts_data['sarcos_inv_test'].shape[0]
 xts = ts_data['sarcos_inv_test'][:,:21]
 yts = ts_data['sarcos_inv_test'][:,21:]
@@ -122,7 +122,7 @@ print('\n---Started training at---', (start_time))
 epochs = 30
 # hist = {'Ltr': [], 'batch': []}
 hist = { 'batch': []}
-    
+
 for epoch in range(1, epochs + 1):
     hist = train(epoch,xts,yts,xtr,ytr,hist)
     test()
@@ -132,7 +132,7 @@ for epoch in range(1, epochs + 1):
 # # for elem in ('Ltr', 'batch'):
 # for elem in ( 'batch'):
 #     hist[elem] = np.array(hist[elem])
- 
+
 
 #plt.figure(1)
 #plt.plot(hist['Ltr'])
@@ -154,5 +154,3 @@ for epoch in range(1, epochs + 1):
 
 # print('Final Training Loss: {}'.format(hist['Ltr'][-1]))
 # print('Final Testing Loss: {}'.format(hist['Lts'][-1]))
-
-
