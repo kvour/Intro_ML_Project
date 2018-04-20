@@ -1,0 +1,125 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%2345678901234567890123456789012345678901234567890123456789012345678901234567890
+%        1         2         3         4         5         6         7         8
+
+\documentclass[letterpaper, 10 pt, conference]{ieeeconf}  % Comment this line out if you need a4paper
+
+%\documentclass[a4paper, 10pt, conference]{ieeeconf}      % Use this line for a4 paper
+
+% ===
+%
+% --- For submission
+\usepackage[disable]{todonotes}
+\usepackage[final]{showlabels}
+
+% --- For writing
+% \usepackage{todonotes}
+% \usepackage[marginal]{showlabels}
+
+%
+% ====
+
+\usepackage{xcolor}
+\usepackage{mathtools} % For aligning matrix content to the left - see https://tex.stackexchange.com/a/156928
+\usepackage{tabstackengine} % For adjusting the spacing in bmatrix - see: https://tex.stackexchange.com/a/275733
+
+\reversemarginpar % Move the todo notes towards the left margin.
+
+\newcommand{\jviereck}[1]{\todo[backgroundcolor=white,inline]{TODO(jviereck): #1}}
+
+\newcommand{\jviereckinline}[1]{\todo[backgroundcolor=white,inline]{TODO(jviereck): #1}}
+\newcommand{\assert}[1]{\todo[backgroundcolor=orange,inline]{ASSERT: #1}}
+\newcommand{\review}[1]{\todo[backgroundcolor=lightgray,inline]{ASSERT REVIEW: #1}}
+\newcommand{\missingtext}[1]{\todo[color=magenta,inline]{WRITE ME(jviereck):
+#1}}
+\newcommand{\writeme}[1]{\missingtext{#1}}
+\newcommand{\question}[1]{\todo[backgroundcolor=orange,inline]{Question: #1}}
+
+
+% For SI units.
+\usepackage{siunitx}
+
+\usepackage{dsfont}
+\usepackage{amsmath}
+\usepackage{bm}
+\usepackage{bbold} % For identity symbol
+\usepackage{subcaption,caption} % For subfigure.
+
+\usepackage{multirow} % Latex Tabel: To get rows over multiple rows
+\usepackage{makecell} % For multiline in table, see, https://tex.stackexchange.com/a/176780
+
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+
+\newcommand{\italic}[1]{\textit{#1}}
+\renewcommand{\b}[1]{\bm{#1}}
+\newcommand{\bl}[1]{\mathbf{#1}}
+
+\DeclareMathOperator*{\argmin}{arg\,min}
+
+
+% Load the cleveref last - see: https://tex.stackexchange.com/a/148701.
+\usepackage[noabbrev, capitalise]{cleveref}
+
+\IEEEoverridecommandlockouts
+
+
+\overrideIEEEmargins
+
+% See the \addtolength command later in the file to balance the column lengths
+% on the last page of the document
+
+% The following packages can be found on http:\\www.ctan.org
+%\usepackage{graphics} % for pdf, bitmapped graphics files
+%\usepackage{epsfig} % for postscript graphics files
+%\usepackage{mathptmx} % assumes new font selection scheme installed
+%\usepackage{times} % assumes new font selection scheme installed
+%\usepackage{amsmath} % assumes amsmath package installed
+\usepackage{amssymb}  % assumes amsmath package installed
+
+\title{\LARGE \bf
+Learning inverse dynamics for a 7 degree of freedom robot arm
+}
+
+\author{Konstantinos Vourloumis, kv810@nyu.edu\\ Julian Viereck, jv1439@nyu.edu}
+
+\begin{document}
+
+\maketitle
+\thispagestyle{empty}
+\pagestyle{empty}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{abstract}
+
+When controlling a robot there are many different ways to describe the desired behavior. One common way is to plan a desired trajectory and then compute the accelorations along this path for the robot to follow it. For a torque controlled robot, given the desired accelorations the necessary torques at each actuated joint must be computed. This computation is known as computing the inverse dynamics in the robotics literature. In this work, we compare different machine learning methods to learn the inverse dynamics for a real world 7 degree of freedom robot arm.
+\end{abstract}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Introduction}
+
+Over the last years, the degree of automation has increased and with it also the usage of robots. Especially in assembly lines, robots are used to improve the process. A common task that robots have to perform is following a desired trajectory. For instance, when reaching a cup, a robot arm goes from an initial position towards the cup. To make the robot follow this trajectory, a common way is by computing the robot's joint angles $\b{q}$ at every timestep. Given these positions, the desired velocity $\b{\dot{q}}$ and acceloration $\b{\ddot{q}}$ along the trajectory is compued (using differentiation) and the control task reduced to track this trajectory.
+
+For position controlled robots, tracking such a desired trajectory is taken care of by the robots firmeware. However, for a torque controlled robot, where the inputs to the system are the desired torques at each actuated joints $\b{\tau}$, one has to convert the desired position trajectory into torque commands. This can be done using a proportinal-integral-derivative (PID) controller. For such a controller, finding the right gains becomes a problem as lower gains make the robot arm more complient while reducing the tracking precision. Another way to track the trajectory is by deriving the necessary torques based on a physical model of the system. Given an n-link robot arm, the dynamics of the sytem can be written as~\cite{murray2017mathematical}:
+~
+\begin{align}
+\label{eq:dyn_tau}
+\b{\tau} &= \b{H}(\b{q})\b{\ddot{q}} + \b{C}(\b{q}, \dot{\b{q}})\dot{\b{q}} + \b{G}(\b{q}),
+\end{align}
+
+where $\b{H}$ denotes the inertia matrix, $\b{C}$ accounts for the centripetal and coriolis torques and $\b{G}$ for the torques due to gravity acting on the system. $\b{q}$ are the joint positions of the manipulator, $\dot{\b{q}}$ its velocity and $\ddot{\b{q}}$ its (desired) acceleration.
+
+For working on a real robot, the torques derived from~\cref{eq:dyn_tau} are often wrong. For instance, the exact inertia matrix $\b{H}$ on a real robot is often unknown. In addition, the model from~\cref{eq:dyn_tau} does not incorporate friction and other disturbance effects. A way to overcome this model vs reality mismatch is by using learning techniques to learn the inverse dynamics directly from data. This has been done before, for instance in~\cite{slotine1987adaptive},~\cite{ratliff2016doomed} and~\cite{meier2016towards}.
+
+In this project, we compare different machine learning methods for learning an inverse dynamics model. In particular, we are going to use the SARCOS data~\cite{SARCOS_data}, which was used in previous publications (\cite{vijayakumar2000lwpr}, \cite{vijayakumar2002statistical}, \cite{vijayakumar2005incremental}). The data consists of 44,484 training samples and 4,449 test samples created on an SARCOS anthropomorphic robot arm. Each sample consists of 7 joint position, velocity and acceloration and 7 target joint torques.
+
+As methods, we compare Support Vector Regression, Random Forest Regression and Neural Networks. We compare different models and select the best model using cross validation. The quality of the prediction is measured by using the mean squared error (MSE). As predictors we use the position, velocity and acceloration of a single timestep as well as the current and the last two samples before.
+
+
+\bibliographystyle{IEEEtran}
+\bibliography{refs}{}
+
+\end{document}
